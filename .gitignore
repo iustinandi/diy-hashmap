@@ -1,0 +1,16 @@
+.vs/
+*.slnx
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+[Debug]/
+[Release]/
+x64/
+x86/
+*.exe
+*.pdb
+*.obj
+*.log
+*.tlog
+*.lastbuildstate
