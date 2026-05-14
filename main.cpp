@@ -156,4 +156,8 @@ public:
 		}
 	}
 
+	Val& operator[](Key k) {
+		insert(k, Val());
+		return find(k)->second;
+	}
 };
