@@ -46,7 +46,7 @@ class Hashtable {
 	void _rehash() {
 		std::vector<Node> old_table = std::move(m_table);
 
-		m_size <<= 1; // TODO: check if is this even an improvement over *= 2 or if it's just larp
+		m_size *= 2;
 		m_table = std::vector<Node>(m_size);
 		m_count_occupied = m_count_deleted = 0;
 
