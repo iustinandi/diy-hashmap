@@ -16,6 +16,14 @@ class Hashtable {
 		BucketState state;
 		Node() : state(BucketState::empty) {}
 		Node(Key k, Val v) : data_pair(k, v), state(BucketState::occupied) {}
+
+		Node& operator=(const Node& node) {
+			if (this != &node) {
+				std::destroy_at(this);
+				std::construct_at(this, node);
+			}
+			return *this;
+		}
 	};
 
 	int m_size;
