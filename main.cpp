@@ -168,4 +168,12 @@ public:
 		insert(k, Val());
 		return find(k)->second;
 	}
+
+	int size() {
+		return m_count_occupied;
+	}
+
+	bool empty() {
+		return m_count_occupied == 0;
+	}
 };
