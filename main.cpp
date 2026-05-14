@@ -88,7 +88,9 @@ public:
 		using pointer = value_type*;
 		using reference = value_type&;
 
-		Hashterator(NodeIterator current, NodeIterator end) : m_current(current), m_end(end) {}
+		Hashterator(NodeIterator current, NodeIterator end) : m_current(current), m_end(end) {
+			for (; m_current != m_end && m_current->state != BucketState::occupied; m_current++);
+		}
 
 		reference operator*() const {
 			return m_current->data_pair;
@@ -121,8 +123,7 @@ public:
 	};
 
 	Hashterator begin() {
-		Hashterator it = Hashterator(m_table.begin() - 1, m_table.end());
-		return ++it;
+		return Hashterator(m_table.begin(), m_table.end());
 	}
 
 	Hashterator end() {
@@ -208,11 +209,11 @@ int main() {
 	std::cout << "Bine ai venit la hashtable menu!\n";
 
 	while (true) {
-		std::cout << "(1) cauta elemente in tabel\n";
+		std::cout << "\n(1) cauta elemente in tabel\n";
 		std::cout << "(2) adauga elemente in tabel (atentie: daca exista deja cheia resp. nu se va adauga)\n";
 		std::cout << "(3) sterge elemente din tabel\n";
 		std::cout << "(4) afisare secventiala tabel\n";
-		std::cout << "(orice altceva) quit\n";
+		std::cout << "(orice altceva) quit\n\n";
 		std::cout << "Alegerea ta: ";
 
 		int option;
@@ -227,10 +228,10 @@ int main() {
 			auto it = food_map.find(key);
 			if (it != food_map.end()) {
 				auto menu = it->second;
-				std::cout << key << ": '" << menu.name << "', " << menu.price << "RON, " << menu.kcal_count << "kcal.\n";
+				std::cout << "\n" << key << ": '" << menu.name << "', " << menu.price << "RON, " << menu.kcal_count << "kcal.\n";
 			}
 			else {
-				std::cout << "Nu a fost gasita in tabel o pereche cu cheia '" << key << "'.\n";
+				std::cout << "\nNu a fost gasita in tabel o pereche cu cheia '" << key << "'.\n";
 			}
 			break;
 		}
@@ -254,20 +255,21 @@ int main() {
 			bool removed = food_map.remove(key);
 
 			if (removed)
-				std::cout << "Sters cu succes perechea cu cheia '" << key << "' din tabel.\n";
+				std::cout << "\nSters cu succes perechea cu cheia '" << key << "' din tabel.\n";
 			else
-				std::cout << "Nu exista pereche cu cheia '" << key << "' in tabel.\n";
+				std::cout << "\nNu exista pereche cu cheia '" << key << "' in tabel.\n";
 			break;
 		}
 		case 4: {
 			int i = 0;
+			std::cout << "\n";
 			for (auto it = food_map.begin(); it != food_map.end(); ++it) {
 				std::string key = it->first;
 				FoodMenu menu = it->second;
 				std::cout << key << ": '" << menu.name << "', " << menu.price << "RON, " << menu.kcal_count << "kcal.\n";
 				i++;
 			}
-			std::cout << i << "elemente.\n";
+			std::cout << "\n" << i << " elemente.\n";
 			break;
 		}
 		default:
