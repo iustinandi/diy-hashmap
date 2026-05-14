@@ -21,6 +21,9 @@ class Hashtable {
 	int m_size;
 	std::vector<Node> m_table;
 
+	int m_count_occupied = 0;
+	int m_count_deleted = 0;
+
 	HashFunc _hash;
 	inline std::size_t _h1(std::size_t init_hash) {
 		return init_hash >> 32;
@@ -28,7 +31,50 @@ class Hashtable {
 	inline std::size_t _h2(std::size_t init_hash) {
 		return init_hash & 0xFFFFFFFF | 1;
 	}
+	
+	int _get_index(Key k) {
+		std::size_t hash = _hash(k);
+		std::size_t h1 = _h1(hash);
+		std::size_t h2 = _h2(hash);
+		int index = h1 % m_size;
+		while (m_table[index].state == BucketState::occupied && m_table[index].data_pair.first != k || m_table[index].state == BucketState::deleted)
+			index = (index + h2) % m_size;
+		return index;
+	}
 public:
 	Hashtable() : m_size(8), m_table(m_size) {}
+	~Hashtable() {}
+	void insert(Key k, Val v) { // TODO: rehash
+		int index = _get_index(k);
+		Node& node = m_table[index];
+
+		if (node.state == BucketState::occupied) 
+			return;
+
+		node.data_pair.second = v;
+
+		node.state = BucketState::occupied;
+		m_count_occupied++;
+	}
+	std::pair<Key, Val>* find(Key k) { // TODO: replace with iterator
+		int index = _get_index(k);
+		Node& node = m_table[index];
+
+		if (node.state == BucketState::occupied)
+			return &node.data_pair;
+		else
+			return nullptr;
+	}
+	void remove(Key k) {
+		int index = _get_index(k);
+		Node& node = m_table[index];
+
+		if (node.state == BucketState::occupied) {
+			node.state = BucketState::deleted;
+			
+			m_count_occupied--;
+			m_count_deleted++;
+		}
+	}
 
 };
