@@ -12,7 +12,7 @@ class Hashtable {
 	};
 
 	struct Node {
-		std::pair<Key, Val> data_pair;
+		std::pair<const Key, Val> data_pair;
 		BucketState state;
 		Node() : state(BucketState::empty) {}
 		Node(Key k, Val v) : data_pair(k, v), state(BucketState::occupied) {}
@@ -26,7 +26,8 @@ class Hashtable {
 
 	HashFunc _hash;
 	inline std::size_t _h1(std::size_t init_hash) {
-		return init_hash >> 32;
+		//return init_hash >> 32;
+		return init_hash;
 	}
 	inline std::size_t _h2(std::size_t init_hash) {
 		return init_hash & 0xFFFFFFFF | 1;
@@ -66,29 +67,79 @@ public:
 	Hashtable() : m_size(8), m_table(m_size) {}
 	~Hashtable() {}
 
-	void insert(Key k, Val v) { // TODO: rehash
+	class Hashterator {
+		using NodeIterator = std::vector<Node>::iterator;
+		NodeIterator m_current, m_end;
+	public:
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = std::pair<const Key, Val>;
+		using difference_type = std::ptrdiff_t;
+		using pointer = value_type*;
+		using reference = value_type&;
+
+		Hashterator(NodeIterator current, NodeIterator end) : m_current(current), m_end(end) {}
+
+		reference operator*() const {
+			return m_current->data_pair;
+		}
+
+		pointer operator->() const {
+			return &(m_current->data_pair);
+		}
+
+		Hashterator& operator++() {
+			m_current++;
+			for (; m_current != m_end && m_current->state != BucketState::occupied; m_current++);
+			return *this;
+		}
+
+		Hashterator operator++(int) {
+			Hashterator tmp = *this;
+			m_current++;
+			for (; m_current != m_end && m_current->state != BucketState::occupied; m_current++);
+			return tmp;
+		}
+
+		bool operator==(const Hashterator& operand) const {
+			return m_current == operand.m_current;
+		}
+
+		bool operator!=(const Hashterator& operand) const {
+			return m_current != operand.m_current;
+		}
+	};
+
+	Hashterator begin() {
+		Hashterator it = Hashterator(m_table.begin() - 1, m_table.end());
+		return ++it;
+	}
+
+	Hashterator end() {
+		return Hashterator(m_table.end(), m_table.end());
+	}
+
+	void insert(Key k, Val v) {
 		int index = _get_index(k);
 		Node& node = m_table[index];
 
-		if (node.state == BucketState::occupied) 
+		if (node.state == BucketState::occupied)
 			return;
 
-		node.data_pair.second = v;
-
-		node.state = BucketState::occupied;
+		std::destroy_at(&node);
+		std::construct_at(&node, k, v);
 		m_count_occupied++;
 
 		_check();
 	}
 
-	std::pair<Key, Val>* find(Key k) { // TODO: replace with iterator
+	Hashterator find(Key k) {
 		int index = _get_index(k);
 		Node& node = m_table[index];
 
 		if (node.state == BucketState::occupied)
-			return &node.data_pair;
+			return Hashterator(m_table.begin() + index, m_table.end());
 		else
-			return nullptr;
+			return end();
 	}
 
 	void remove(Key k) {
