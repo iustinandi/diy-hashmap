@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 
+// TODO: move the class to a header file and include it
 template <typename Key, typename Val, typename HashFunc = std::hash<Key>>
 requires std::is_invocable_r_v<std::size_t, HashFunc, Key>
 class Hashtable {
@@ -44,14 +45,36 @@ class Hashtable {
 		return init_hash & 0xFFFFFFFF | 1;
 	}
 
-	int _get_index(Key k) {
+	int _get_index_lookup(Key k) {
 		std::size_t hash = _hash(k);
 		std::size_t h1 = _h1(hash);
 		std::size_t h2 = _h2(hash);
 		int index = h1 % m_size;
-		while (m_table[index].state == BucketState::occupied && m_table[index].data_pair.first != k || m_table[index].state == BucketState::deleted)
+		while (m_table[index].state == BucketState::occupied && m_table[index].data_pair.first != k
+			|| m_table[index].state == BucketState::deleted)
 			index = (index + h2) % m_size;
 		return index;
+	}
+
+	int _get_index_insert(Key k) {
+		std::size_t hash = _hash(k);
+		std::size_t h1 = _h1(hash);
+		std::size_t h2 = _h2(hash);
+		int index = h1 % m_size;
+		int first_deleted = -1;
+		while (true) {
+			BucketState state = m_table[index].state;
+			if (state == BucketState::occupied) {
+				if (m_table[index].data_pair.first == k)
+					return index;
+			} else if (state == BucketState::deleted) {
+				if (first_deleted == -1)
+					first_deleted = index;
+			} else {
+				return (first_deleted != -1) ? first_deleted : index;
+			}
+			index = (index + h2) % m_size;
+		}
 	}
 
 	void _rehash() {
@@ -131,21 +154,26 @@ public:
 	}
 
 	void insert(Key k, Val v) {
-		int index = _get_index(k);
+		int index = _get_index_insert(k);
 		Node& node = m_table[index];
 
-		if (node.state == BucketState::occupied)
+		if (node.state == BucketState::occupied) {
+			node.data_pair.second = v;
 			return;
+		}
 
+		bool was_deleted = (node.state == BucketState::deleted);
 		std::destroy_at(&node);
 		std::construct_at(&node, k, v);
+		if (was_deleted)
+			m_count_deleted--;
 		m_count_occupied++;
 
 		_check();
 	}
 
 	Hashterator find(Key k) {
-		int index = _get_index(k);
+		int index = _get_index_lookup(k);
 		Node& node = m_table[index];
 
 		if (node.state == BucketState::occupied)
@@ -155,7 +183,7 @@ public:
 	}
 
 	bool remove(Key k) {
-		int index = _get_index(k);
+		int index = _get_index_lookup(k);
 		Node& node = m_table[index];
 
 		if (node.state == BucketState::occupied) {
@@ -171,7 +199,9 @@ public:
 	}
 
 	Val& operator[](Key k) {
-		insert(k, Val());
+		int index = _get_index_lookup(k);
+		if (m_table[index].state != BucketState::occupied)
+			insert(k, Val());
 		return find(k)->second;
 	}
 
@@ -210,7 +240,7 @@ int main() {
 
 	while (true) {
 		std::cout << "\n(1) cauta elemente in tabel\n";
-		std::cout << "(2) adauga elemente in tabel (atentie: daca exista deja cheia resp. nu se va adauga)\n";
+		std::cout << "(2) adauga elemente in tabel\n";
 		std::cout << "(3) sterge elemente din tabel\n";
 		std::cout << "(4) afisare secventiala tabel\n";
 		std::cout << "(orice altceva) quit\n\n";
